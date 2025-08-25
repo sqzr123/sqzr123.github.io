@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="cn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>测试测试</title>
+    <link
+      rel="stylesheet"
+      href="https://api.360zqf.com/oss/zqf-admin-d/dae99422845c2284024513293028990d.css"
+    />
+    <script src="https://api.360zqf.com/oss/zqf-admin-b/b2f72b3f27ce5c78288e0f4214e116c2.js"></script>
+    <script src="https://api.360zqf.com/oss/zqf-admin-0/01192dfd0d4860fcaa622beb0912d669.js"></script>
+    <link rel="stylesheet/less" href="./element-ui_less.less" />
+  </head>
+
+  <script src="https://api.360zqf.com/oss/zqf-admin-8/8fb8fee4fcc3cc86ff6c724154c49c42.js"></script>
+
+  <body>
+    <div id="app">
+      <el-button plain @click="dialogVisible = true"> 新增 </el-button>
+      <el-row style="margin-top: 20px">
+        <el-table
+          :data="s.tableData"
+          border
+          :cell-style="{ 'text-align': 'center' }"
+          :header-cell-style="{ textAlign: 'center' }"
+        >
+          <el-table-column prop="combo" label="号码">
+            <template #header>
+              号码
+              <span
+                style="font-weight: normal; font-size: 12px"
+                class="color-primary cursor-pointer"
+                @click="onCopy('content')"
+                >复制列</span
+              >
+            </template>
+          </el-table-column>
+          <el-table-column prop="count" label="出现次数" />
+        </el-table>
+      </el-row>
+      <el-dialog v-model="dialogVisible" title="放入数据" width="800" :before-close="handleClose">
+        <el-row>
+          <el-col :span="10">
+            <div class="grid-content ep-bg-purple">
+              <el-input
+                v-model="s.form.value"
+                style="width: 240px"
+                :rows="19"
+                type="textarea"
+                placeholder="数据B列"
+              />
+            </div>
+          </el-col>
+          <el-col :span="10">
+            <div class="grid-content ep-bg-purple-light">
+              <el-input
+                v-model="s.form.value1"
+                style="width: 240px"
+                :rows="19"
+                type="textarea"
+                placeholder="数据F列"
+              />
+            </div>
+          </el-col>
+        </el-row>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="dialogVisible = false">关闭</el-button>
+            <el-button type="primary" @click="btnqd"> 确定 </el-button>
+          </div>
+        </template>
+      </el-dialog>
+    </div>
+  </body>
+  <script>
+    const { createApp, ref, onMounted, reactive } = Vue
+    const {
+      FormRules,
+      ElUpload,
+      ElButton,
+      UploadProps,
+      UploadUserFile,
+      ElMessage,
+      Delete,
+      Download,
+      Plus,
+      ZoomIn,
+    } = ElementPlus
+    const app = createApp({
+      setup() {
+        const s = reactive({
+          data: {},
+          form: {},
+          isShow: false,
+          loading: false,
+          Editctrl: false,
+          tableData: [],
+        })
+        const dialogVisible = ref(false)
+        const handleClose = () => {}
+        const makeStrOrArrs = (str) => {
+          const lines = str.trim().split(/\n/)
+          const result = []
+
+          for (let line of lines) {
+            const nums = line.match(/\d+/g)
+            if (nums) {
+              result.push(nums.join(''))
+            }
+          }
+
+          return result
+        }
+
+        const combinations = (arr, m) => {
+          const result = []
+          function helper(start, combo) {
+            if (combo.length === m) {
+              result.push([...combo])
+              return
+            }
+            for (let i = start; i < arr.length; i++) {
+              combo.push(arr[i])
+              helper(i + 1, combo)
+              combo.pop()
+            }
+          }
+          helper(0, [])
+          return result
+        }
+        const opened = () => {}
+        onMounted(() => {})
+        const btnqd = () => {
+          let B = makeStrOrArrs(s.form.value)
+          let F = makeStrOrArrs(s.form.value1)
+          const B_sets = B.map((num) => num.toString().split(''))
+          const F_sets = F.map((num) => new Set(num.toString().split('')))
+
+          const results = []
+
+          B_sets.forEach((bArr, bIndex) => {
+            const bCombos = combinations(bArr, 3)
+
+            bCombos.forEach((combo) => {
+              let count = 0
+              F_sets.forEach((fSet) => {
+                if (combo.every((d) => fSet.has(d))) {
+                  count++
+                }
+              })
+
+              if (count > 0) {
+                results.push({
+                  B: B[bIndex],
+                  combo: combo.join(''),
+                  count: count,
+                })
+              }
+            })
+          })
+          const finalResults = Object.values(
+            results.reduce((acc, cur) => {
+              if (!acc[cur.combo]) {
+                acc[cur.combo] = {
+                  combo: cur.combo,
+                  count: cur.count,
+                  fromB: [cur.B],
+                }
+              } else {
+                acc[cur.combo].count += cur.count
+                acc[cur.combo].fromB.push(cur.B)
+              }
+              return acc
+            }, {})
+          )
+          s.tableData = finalResults.sort((a, b) => {
+            return Number(a.combo[0]) - Number(b.combo[0])
+          })
+          dialogVisible.value = false
+          // console.log(makeStrOrArrs(s.form.value), results, finalResults)
+        }
+
+        const onCopy = async (prop) => {
+          if (!s.tableData || s.tableData.length < 1) {
+            return ElMessage.error('没有数据列可复制')
+          }
+
+          let copyText = s.tableData
+            .map((v) => v['combo'])
+            .filter((v) => !!v && !['合计'].includes(v))
+            .join('\r\n')
+          console.log(copyText)
+          if (!copyText) {
+            return ElMessage.warning('没有可复制的内容')
+          }
+
+          try {
+            await navigator.clipboard.writeText(copyText)
+            ElMessage.success('复制成功！')
+          } catch (err) {
+            console.error(err)
+            ElMessage.error('复制失败，请手动复制')
+          }
+        }
+        return {
+          s,
+          opened,
+          makeStrOrArrs,
+          // removePropertyOf,
+          handleClose,
+          dialogVisible,
+          btnqd,
+          combinations,
+          onCopy,
+        }
+      },
+    })
+    app.use(ElementPlus).mount('#app')
+  </script>
+  <style>
+    .mb20 {
+      padding: 10px;
+    }
+  </style>
+</html>
