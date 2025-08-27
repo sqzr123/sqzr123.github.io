@@ -10,6 +10,7 @@
     />
     <script src="https://api.360zqf.com/oss/zqf-admin-b/b2f72b3f27ce5c78288e0f4214e116c2.js"></script>
     <script src="https://api.360zqf.com/oss/zqf-admin-0/01192dfd0d4860fcaa622beb0912d669.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet/less" href="./element-ui_less.less" />
   </head>
 
@@ -18,6 +19,7 @@
   <body>
     <div id="app">
       <el-button plain @click="dialogVisible = true"> 新增 </el-button>
+      <el-button type="success" plain @click="exportExcel"> 导出Excel </el-button>
       <el-row style="margin-top: 20px">
         <el-table
           :data="s.tableData"
@@ -98,6 +100,23 @@
           tableData: [],
         })
         const dialogVisible = ref(false)
+        const exportExcel = () => {
+          if (!s.tableData || s.tableData.length === 0) {
+            return ElMessage.warning('没有数据可导出')
+          }
+
+          // 1. 组装数据：把对象数组转成二维数组
+          const header = ['号码', '出现次数']
+          const data = s.tableData.map((row) => [row.combo, row.count])
+
+          // 2. 使用 XLSX 生成工作簿
+          const worksheet = XLSX.utils.aoa_to_sheet([header, ...data])
+          const workbook = XLSX.utils.book_new()
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1')
+
+          // 3. 下载
+          XLSX.writeFile(workbook, '导出.xlsx')
+        }
         const handleClose = () => {}
         const makeStrOrArrs = (str) => {
           const lines = str.trim().split(/\n/)
@@ -213,6 +232,7 @@
           btnqd,
           combinations,
           onCopy,
+          exportExcel,
         }
       },
     })
@@ -224,4 +244,3 @@
     }
   </style>
 </html>
-
