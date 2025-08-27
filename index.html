@@ -175,7 +175,7 @@
             }, {})
           )
           s.tableData = finalResults.sort((a, b) => {
-            return Number(a.combo[0]) - Number(b.combo[0])
+            return Number(a.combo) - Number(b.combo)
           })
           dialogVisible.value = false
           // console.log(makeStrOrArrs(s.form.value), results, finalResults)
@@ -224,3 +224,4 @@
     }
   </style>
 </html>
+
